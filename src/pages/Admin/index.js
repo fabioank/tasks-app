@@ -9,8 +9,9 @@ import {
     , query
     , orderBy
     , where
-    ,doc
-    ,deleteDoc
+    , doc
+    , deleteDoc
+    ,updateDoc
 } from 'firebase/firestore';
 
 export default function Admin() {
@@ -18,6 +19,7 @@ export default function Admin() {
     const [tarefaInput, setTarefaInput] = useState('');
     const [user, setUser] = useState({});
     const [tarefas, setTarefas] = useState([]);
+    const [edit, setEdit] = useState({});
 
     useEffect(() => {
         async function loadTarefas() {
@@ -52,6 +54,11 @@ export default function Admin() {
             alert("Digite a sua tarefa")
             return;
         }
+
+        if(edit?.id){
+            handleUpdatesTarefa();
+            return;
+        }
         await addDoc(collection(db, "tarefas"), {
             tarefa: tarefaInput,
             created: new Date(),
@@ -71,13 +78,30 @@ export default function Admin() {
         await signOut(auth);
     }
 
-    async function deleteTarefa(id){
+    async function deleteTarefa(id) {
         const docRef = doc(db, "tarefas", id)
         await deleteDoc(docRef);
     }
 
-    function editTarefa(item){
+    function editTarefa(item) {
         setTarefaInput(item.tarefa)
+        setEdit(item);
+    }
+
+    async function handleUpdatesTarefa(){
+        const docRef = doc(db, "tarefas", edit?.id)
+        await updateDoc(docRef, {
+            tarefa: tarefaInput
+        })
+        .then(() =>{
+            setTarefaInput('');
+            setEdit('');
+        })
+        .catch(() =>{
+            console.log("Erro ao atualizar")
+            setTarefaInput('');
+            setEdit('');
+        })
     }
 
 
@@ -91,11 +115,14 @@ export default function Admin() {
                     value={tarefaInput}
                     onChange={(e) => setTarefaInput(e.target.value)}
                 />
-                <button className='btn-register' type='submit'>Registrar tarefa</button>
+                {Object.keys(edit).length > 0 ? (
+                    <button className='btn-register' style={{backgroundColor: '#6add39'}} type='submit'>Atualizar tarefa</button>)
+                    : (
+                    <button className='btn-register' type='submit'>Registrar tarefa</button>)}
             </form>
 
             {tarefas.map((item) => (
-                <article  key={item.id} className='list'>
+                <article key={item.id} className='list'>
                     <p>{item.tarefa}</p>
 
                     <div>
